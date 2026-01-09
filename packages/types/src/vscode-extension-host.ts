@@ -19,6 +19,7 @@ import type { SerializedCustomToolDefinition } from "./custom-tool.js"
 import type { GitCommit } from "./git.js"
 import type { McpServer } from "./mcp.js"
 import type { ModelRecord, RouterModels } from "./model.js"
+import type { WorktreeIncludeStatus } from "./worktree.js"
 
 /**
  * ExtensionMessage
@@ -226,6 +227,7 @@ export interface ExtensionMessage {
 	suggestedBranch?: string
 	suggestedPath?: string
 	worktreeIncludeExists?: boolean
+	worktreeIncludeStatus?: WorktreeIncludeStatus
 	hasGitignore?: boolean
 	gitignoreContent?: string
 	hasConflicts?: boolean
