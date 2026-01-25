@@ -116,6 +116,20 @@ export class CloudService extends EventEmitter<CloudServiceEvents> implements Di
 		}
 
 		try {
+			// Log cloud service configuration for debugging
+			const { getCloudServiceConfig } = await import("./config.js")
+			const config = getCloudServiceConfig()
+			this.log("[CloudService] Initializing with configuration:", {
+				clerkBaseUrl: config.clerkBaseUrl,
+				rooCodeApiUrl: config.rooCodeApiUrl,
+				rooCodeProviderUrl: config.rooCodeProviderUrl,
+				isCustom: config.isCustom,
+			})
+
+			if (config.isCustom) {
+				this.log("[CloudService] Using custom (self-hosted) cloud services. See SELF_HOSTING.md for details.")
+			}
+
 			// For testing you can create a token with:
 			// `pnpm --filter @roo-code-cloud/roomote-cli development auth job-token --job-id 1 --user-id user_2xmBhejNeDTwanM8CgIOnMgVxzC --org-id org_2wbhchVXZMQl8OS1yt0mrDazCpW`
 			// The token will last for 1 hour.
