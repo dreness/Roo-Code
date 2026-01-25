@@ -23,6 +23,7 @@ The Roo Code extension connects to three main services:
 3. **Provider Proxy Service** (OpenAI-compatible API proxy)
 
 Optional components:
+
 - **Socket Bridge Service** (Socket.io server for Roomote real-time control)
 
 ## Configuration
@@ -47,29 +48,31 @@ ROO_CODE_PROVIDER_URL=https://your-provider-service.example.com/proxy
 **Option 1: VS Code Settings**
 
 Add to your VS Code `settings.json`:
+
 ```json
 {
-  "terminal.integrated.env.linux": {
-    "CLERK_BASE_URL": "https://your-auth-service.example.com",
-    "ROO_CODE_API_URL": "https://your-api-service.example.com",
-    "ROO_CODE_PROVIDER_URL": "https://your-provider-service.example.com/proxy"
-  },
-  "terminal.integrated.env.osx": {
-    "CLERK_BASE_URL": "https://your-auth-service.example.com",
-    "ROO_CODE_API_URL": "https://your-api-service.example.com",
-    "ROO_CODE_PROVIDER_URL": "https://your-provider-service.example.com/proxy"
-  },
-  "terminal.integrated.env.windows": {
-    "CLERK_BASE_URL": "https://your-auth-service.example.com",
-    "ROO_CODE_API_URL": "https://your-api-service.example.com",
-    "ROO_CODE_PROVIDER_URL": "https://your-provider-service.example.com/proxy"
-  }
+	"terminal.integrated.env.linux": {
+		"CLERK_BASE_URL": "https://your-auth-service.example.com",
+		"ROO_CODE_API_URL": "https://your-api-service.example.com",
+		"ROO_CODE_PROVIDER_URL": "https://your-provider-service.example.com/proxy"
+	},
+	"terminal.integrated.env.osx": {
+		"CLERK_BASE_URL": "https://your-auth-service.example.com",
+		"ROO_CODE_API_URL": "https://your-api-service.example.com",
+		"ROO_CODE_PROVIDER_URL": "https://your-provider-service.example.com/proxy"
+	},
+	"terminal.integrated.env.windows": {
+		"CLERK_BASE_URL": "https://your-auth-service.example.com",
+		"ROO_CODE_API_URL": "https://your-api-service.example.com",
+		"ROO_CODE_PROVIDER_URL": "https://your-provider-service.example.com/proxy"
+	}
 }
 ```
 
 **Option 2: System Environment Variables**
 
 Set environment variables before launching VS Code:
+
 ```bash
 export CLERK_BASE_URL=https://your-auth-service.example.com
 export ROO_CODE_API_URL=https://your-api-service.example.com
@@ -80,6 +83,7 @@ code .
 **Option 3: Development (.env file)**
 
 For local development, create a `.env` file in the repository root:
+
 ```bash
 CLERK_BASE_URL=http://localhost:3001
 ROO_CODE_API_URL=http://localhost:3000
@@ -97,183 +101,203 @@ Your API service must implement the following REST endpoints:
 These endpoints follow the Clerk OAuth flow. You can use Clerk or implement a compatible service.
 
 **GET** `/v1/client/sign_ins`
+
 - Initialize OAuth sign-in flow
 - Response: Sign-in session details
 
 **POST** `/v1/client/sign_ins/{sign_in_id}/prepare_first_factor`
+
 - Prepare OAuth first factor authentication
 - Body: `{ "strategy": "oauth_custom", "redirect_url": string }`
 
 **GET** `/v1/me`
+
 - Get authenticated user information
 - Headers: `Authorization: Bearer {client_token}`
 - Response:
+
 ```json
 {
-  "response": {
-    "id": "user_id",
-    "first_name": "John",
-    "last_name": "Doe",
-    "image_url": "https://...",
-    "primary_email_address_id": "email_id",
-    "email_addresses": [
-      { "id": "email_id", "email_address": "user@example.com" }
-    ],
-    "public_metadata": {}
-  }
+	"response": {
+		"id": "user_id",
+		"first_name": "John",
+		"last_name": "Doe",
+		"image_url": "https://...",
+		"primary_email_address_id": "email_id",
+		"email_addresses": [{ "id": "email_id", "email_address": "user@example.com" }],
+		"public_metadata": {}
+	}
 }
 ```
 
 **GET** `/v1/me/organization_memberships`
+
 - Get user's organization memberships
 - Headers: `Authorization: Bearer {client_token}`
 - Response:
+
 ```json
 {
-  "response": [
-    {
-      "id": "membership_id",
-      "role": "admin",
-      "permissions": ["org:manage"],
-      "created_at": 1234567890,
-      "updated_at": 1234567890,
-      "organization": {
-        "id": "org_id",
-        "name": "Organization Name",
-        "slug": "org-slug",
-        "image_url": "https://...",
-        "has_image": true
-      }
-    }
-  ]
+	"response": [
+		{
+			"id": "membership_id",
+			"role": "admin",
+			"permissions": ["org:manage"],
+			"created_at": 1234567890,
+			"updated_at": 1234567890,
+			"organization": {
+				"id": "org_id",
+				"name": "Organization Name",
+				"slug": "org-slug",
+				"image_url": "https://...",
+				"has_image": true
+			}
+		}
+	]
 }
 ```
 
 **POST** `/v1/client/sessions/{session_id}/tokens`
+
 - Create session token (JWT)
 - Headers: `Authorization: Bearer {client_token}`
 - Response:
+
 ```json
 {
-  "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+	"jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
 ### Extension API Endpoints
 
 **GET** `/api/extension-settings`
+
 - Get organization and user settings
 - Headers: `Authorization: Bearer {session_token}`
 - Response:
+
 ```json
 {
-  "organization": {
-    "version": 1,
-    "cloudSettings": {
-      "recordTaskMessages": true,
-      "enableTaskSharing": true,
-      "allowPublicTaskSharing": true,
-      "taskShareExpirationDays": 30,
-      "allowMembersViewAllTasks": true,
-      "workspaceTaskVisibility": "all",
-      "llmEnhancedFeaturesEnabled": false
-    },
-    "defaultSettings": {
-      "maxOpenTabsContext": 10,
-      "maxReadFileLine": 5000,
-      "maxWorkspaceFiles": 1000,
-      "terminalOutputLineLimit": 500
-    },
-    "allowList": {
-      "allowAll": true,
-      "providers": {}
-    },
-    "features": {
-      "roomoteControlEnabled": false
-    },
-    "providerProfiles": {},
-    "mcps": [],
-    "hiddenMcps": [],
-    "hideMarketplaceMcps": false
-  },
-  "user": {
-    "version": 1,
-    "features": {
-      "roomoteControlEnabled": false
-    },
-    "settings": {
-      "extensionBridgeEnabled": false,
-      "taskSyncEnabled": true,
-      "llmEnhancedFeaturesEnabled": false
-    }
-  }
+	"organization": {
+		"version": 1,
+		"cloudSettings": {
+			"recordTaskMessages": true,
+			"enableTaskSharing": true,
+			"allowPublicTaskSharing": true,
+			"taskShareExpirationDays": 30,
+			"allowMembersViewAllTasks": true,
+			"workspaceTaskVisibility": "all",
+			"llmEnhancedFeaturesEnabled": false
+		},
+		"defaultSettings": {
+			"maxOpenTabsContext": 10,
+			"maxReadFileLine": 5000,
+			"maxWorkspaceFiles": 1000,
+			"terminalOutputLineLimit": 500
+		},
+		"allowList": {
+			"allowAll": true,
+			"providers": {}
+		},
+		"features": {
+			"roomoteControlEnabled": false
+		},
+		"providerProfiles": {},
+		"mcps": [],
+		"hiddenMcps": [],
+		"hideMarketplaceMcps": false
+	},
+	"user": {
+		"version": 1,
+		"features": {
+			"roomoteControlEnabled": false
+		},
+		"settings": {
+			"extensionBridgeEnabled": false,
+			"taskSyncEnabled": true,
+			"llmEnhancedFeaturesEnabled": false
+		}
+	}
 }
 ```
 
 **POST** `/api/user-settings`
+
 - Update user settings
 - Headers: `Authorization: Bearer {session_token}`
 - Body: Partial user settings to update
 - Response: Updated user settings
 
 **POST** `/api/extension/share`
+
 - Share a task
 - Headers: `Authorization: Bearer {session_token}`
 - Body:
+
 ```json
 {
-  "taskId": "task_id",
-  "visibility": "organization" // or "public"
+	"taskId": "task_id",
+	"visibility": "organization" // or "public"
 }
 ```
+
 - Response:
+
 ```json
 {
-  "success": true,
-  "shareUrl": "https://your-app.com/share/abc123",
-  "isNewShare": true,
-  "manageUrl": "https://your-app.com/tasks/manage"
+	"success": true,
+	"shareUrl": "https://your-app.com/share/abc123",
+	"isNewShare": true,
+	"manageUrl": "https://your-app.com/tasks/manage"
 }
 ```
 
 **GET** `/api/extension/credit-balance`
+
 - Get user's credit balance
 - Headers: `Authorization: Bearer {session_token}`
 - Response:
+
 ```json
 {
-  "balance": 100.50
+	"balance": 100.5
 }
 ```
 
 **GET** `/api/extension/bridge/config`
+
 - Get socket bridge configuration (for Roomote control)
 - Headers: `Authorization: Bearer {session_token}`
 - Response:
+
 ```json
 {
-  "userId": "user_id",
-  "socketBridgeUrl": "https://your-socket-service.example.com",
-  "token": "bridge_auth_token"
+	"userId": "user_id",
+	"socketBridgeUrl": "https://your-socket-service.example.com",
+	"token": "bridge_auth_token"
 }
 ```
 
 ### Telemetry Endpoints
 
 **POST** `/api/events`
+
 - Send telemetry events
 - Headers: `Authorization: Bearer {session_token}`
 - Body:
+
 ```json
 {
-  "name": "event_name",
-  "properties": {
-    "key": "value"
-  }
+	"name": "event_name",
+	"properties": {
+		"key": "value"
+	}
 }
 ```
 
 **POST** `/api/events/backfill`
+
 - Backfill historical telemetry events
 - Headers: `Authorization: Bearer {session_token}`
 - Body: Array of telemetry events
@@ -283,34 +307,38 @@ These endpoints follow the Clerk OAuth flow. You can use Clerk or implement a co
 Your provider proxy must implement an OpenAI-compatible API at `/v1`:
 
 **POST** `/v1/chat/completions`
+
 - OpenAI-compatible chat completions endpoint
 - Headers: `Authorization: Bearer {session_token}`
 - Body: Standard OpenAI chat completion request
 - Response: Standard OpenAI chat completion response (streaming or non-streaming)
 
 **GET** `/models`
+
 - List available AI models
 - Headers: `Authorization: Bearer {session_token}`
 - Response:
+
 ```json
 {
-  "data": [
-    {
-      "id": "model-id",
-      "name": "Model Name",
-      "provider": "provider-name",
-      "maxTokens": 8000,
-      "contextWindow": 100000,
-      "supportsImages": true,
-      "supportsPromptCache": true,
-      "inputPrice": 0.003,
-      "outputPrice": 0.015
-    }
-  ]
+	"data": [
+		{
+			"id": "model-id",
+			"name": "Model Name",
+			"provider": "provider-name",
+			"maxTokens": 8000,
+			"contextWindow": 100000,
+			"supportsImages": true,
+			"supportsPromptCache": true,
+			"inputPrice": 0.003,
+			"outputPrice": 0.015
+		}
+	]
 }
 ```
 
 The provider proxy should:
+
 - Authenticate requests using the session token
 - Route requests to appropriate AI model providers
 - Track token usage and costs
@@ -321,6 +349,7 @@ The provider proxy should:
 For Roomote control features, implement a Socket.io server that:
 
 ### Connection
+
 - Accepts WebSocket connections at the URL from `/api/extension/bridge/config`
 - Authenticates using the token from bridge config
 - Manages user-specific rooms for pub/sub messaging
@@ -328,6 +357,7 @@ For Roomote control features, implement a Socket.io server that:
 ### Event Types
 
 **Extension → Server (Extension Instance Events)**
+
 - `instance_registered` - Extension instance connected
 - `instance_unregistered` - Extension instance disconnected
 - `heartbeat_updated` - Periodic heartbeat (every 20s)
@@ -337,11 +367,13 @@ For Roomote control features, implement a Socket.io server that:
 - `provider_profile_changed` - Provider profile changed
 
 **Server → Extension (Commands)**
+
 - `start_task` - Start a new task
 - `stop_task` - Stop a running task
 - `resume_task` - Resume a task
 
 **Task Messages (Bidirectional)**
+
 - `message` - Send message to task
 - `approve_ask` - Approve a pending ask
 - `deny_ask` - Deny a pending ask
@@ -349,6 +381,7 @@ For Roomote control features, implement a Socket.io server that:
 ### Event Schema
 
 All events include:
+
 - `type` - Event/command name
 - `timestamp` - Unix timestamp in milliseconds
 - `instance` - Extension instance details (for instance events)
@@ -363,21 +396,22 @@ Session tokens should be JWTs with the following payload:
 
 ```json
 {
-  "iss": "your-service",
-  "sub": "user_id",
-  "exp": 1234567890,
-  "iat": 1234567890,
-  "nbf": 1234567890,
-  "v": 1,
-  "r": {
-    "u": "user_id",
-    "o": "organization_id",
-    "t": "auth"
-  }
+	"iss": "your-service",
+	"sub": "user_id",
+	"exp": 1234567890,
+	"iat": 1234567890,
+	"nbf": 1234567890,
+	"v": 1,
+	"r": {
+		"u": "user_id",
+		"o": "organization_id",
+		"t": "auth"
+	}
 }
 ```
 
 Where:
+
 - `iss` - Issuer identifier
 - `sub` - Subject (user ID)
 - `exp` - Expiration timestamp
@@ -406,8 +440,7 @@ A minimal self-hosted setup requires:
 2. **API Service** - Backend API implementing the extension endpoints
 3. **Provider Proxy** - OpenAI-compatible proxy to your AI model providers
 
-Optional:
-4. **Socket Bridge** - Only needed if you want Roomote remote control features
+Optional: 4. **Socket Bridge** - Only needed if you want Roomote remote control features
 
 ## Testing Your Setup
 
@@ -458,7 +491,7 @@ The official Roo Cloud services can be used as a reference for expected behavior
 All API responses should match the schemas defined in `packages/types/src/cloud.ts`. Use these schemas to validate your implementation:
 
 - `organizationSettingsSchema` - Organization settings structure
-- `userSettingsDataSchema` - User settings structure  
+- `userSettingsDataSchema` - User settings structure
 - `shareResponseSchema` - Share task response
 - `extensionBridgeEventSchema` - Socket events from extension
 - `extensionBridgeCommandSchema` - Socket commands to extension
@@ -477,6 +510,7 @@ For questions about self-hosting:
 ## License
 
 When implementing a self-hosted alternative, ensure you comply with:
+
 - Roo Code's license terms
 - Any third-party service licenses (e.g., AI model providers)
 - Privacy and data protection regulations applicable to your use case
