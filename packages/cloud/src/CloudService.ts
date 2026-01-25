@@ -26,6 +26,7 @@ import { CloudTelemetryClient as TelemetryClient } from "./TelemetryClient.js"
 import { CloudShareService } from "./CloudShareService.js"
 import { CloudAPI } from "./CloudAPI.js"
 import { RetryQueue } from "./retry-queue/index.js"
+import { getCloudServiceConfig } from "./config.js"
 
 type AuthStateChangedPayload = CloudServiceEvents["auth-state-changed"][0]
 type AuthUserInfoPayload = CloudServiceEvents["user-info"][0]
@@ -117,7 +118,6 @@ export class CloudService extends EventEmitter<CloudServiceEvents> implements Di
 
 		try {
 			// Log cloud service configuration for debugging
-			const { getCloudServiceConfig } = await import("./config.js")
 			const config = getCloudServiceConfig()
 			this.log("[CloudService] Initializing with configuration:", {
 				clerkBaseUrl: config.clerkBaseUrl,
