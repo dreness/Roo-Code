@@ -4,6 +4,8 @@
 
 PR #11131 fixed a `ToolResultIdMismatchError` that occurred when tool result IDs didn't match tool use IDs in the API conversation history. The root cause was an **inconsistent application of ID sanitization** between where `tool_use` blocks were saved to history (`Task.ts`) and where `tool_result` blocks were created (`presentAssistantMessage.ts`). This affected approximately **926 occurrences** reported via PostHog telemetry in version 3.46.0.
 
+**Bug History**: The bug was introduced in **v3.40.0** (January 13, 2026) when `sanitizeToolUseId()` was first added to `Task.ts` (PR #10649) but not to `presentAssistantMessage.ts`. It persisted through versions 3.40.x, 3.41.x, 3.42.x, 3.43.x, 3.44.x, 3.45.x, and 3.46.0 before being fixed in **v3.46.1** (January 31, 2026).
+
 ## Background: The Tool Execution Flow
 
 To understand the problem, it's essential to understand how tool execution and API conversation history work in this codebase:
@@ -44,6 +46,54 @@ When tools are executed in `presentAssistantMessage.ts`:
    - Tool use ID in history: `functions_read_file_0` (sanitized)
    - Tool result ID trying to reference it: `functions.read_file:0` (unsanitized)
    - **Result**: `ToolResultIdMismatchError`
+
+## Bug History: When Was It Introduced?
+
+Through code inspection of the git history, the bug was introduced in a specific version and persisted for several releases:
+
+### Initial Introduction: v3.40.0 (January 13, 2026)
+
+The `sanitizeToolUseId()` function was **first introduced** in commit `621d950` (PR #10649) on January 12, 2026, and released in v3.40.0 on January 13, 2026.
+
+**What happened in PR #10649**:
+- Created `src/utils/tool-id.ts` with the `sanitizeToolUseId()` function
+- Added sanitization to `Task.ts` when saving `tool_use` blocks to API history
+- **Did NOT add** sanitization to `presentAssistantMessage.ts` where `tool_result` blocks are created
+- This created the split-brain condition that caused the bug
+
+**Why it was added**: To fix API validation errors where tool IDs from certain providers (MCP tools, Gemini, OpenRouter) contained special characters that violated the API validation pattern `^[a-zA-Z0-9_-]+$`.
+
+### Versions Affected
+
+The bug existed in the following versions:
+- **v3.40.0** (January 13, 2026) - Bug introduced
+- **v3.40.1** (January 14, 2026)
+- **v3.41.x** series (January 15-18, 2026)
+- **v3.42.0** (January 23, 2026)
+- **v3.43.0** (January 24, 2026)
+- **v3.44.x** series (January 27, 2026)
+- **v3.45.0** (January 28, 2026)
+- **v3.46.0** (January 30, 2026) - PostHog reported 926 errors from this version
+
+**Total duration**: Approximately **18 days** (January 13-31, 2026)
+
+### Bug Fixed: v3.46.1 (January 31, 2026)
+
+The bug was fixed in commit `fe85422` (PR #11131) on January 31, 2026, and released in v3.46.1.
+
+**What changed in PR #11131**:
+- Added `sanitizeToolUseId()` import to `presentAssistantMessage.ts`
+- Applied sanitization to all 7 locations where `tool_result` blocks are created
+- Added test coverage for the exact pattern seen in PostHog errors
+
+### Versions Before the Bug (v3.39.3 and earlier)
+
+Prior to v3.40.0, the `sanitizeToolUseId()` function **did not exist**, so:
+- Tool use IDs were stored in API history **without sanitization**
+- Tool result IDs referenced them **without sanitization**
+- Both matched perfectly, so **no mismatch errors occurred**
+
+However, this meant that providers generating IDs with special characters would cause **API validation errors** instead of mismatch errors. PR #10649 was created to fix those API validation errors, but inadvertently introduced the mismatch bug.
 
 ### 3. Validation and Error Detection
 
@@ -218,10 +268,30 @@ The relationship to queued outgoing user prompts is that they **expose timing-de
 
 ## References
 
-- **PR #11131**: https://github.com/RooCodeInc/Roo-Code/pull/11131
+### Pull Requests and Issues
+- **PR #11131** (Bug Fix): https://github.com/RooCodeInc/Roo-Code/pull/11131
+  - Commit: `fe85422d9c3411218c9d89850743745ad1105b75`
+  - Released in: v3.46.1 (January 31, 2026)
+- **PR #10649** (Bug Introduction): https://github.com/RooCodeInc/Roo-Code/pull/10649
+  - Commit: `621d9500deabba4f3e9e91169e10d476816bc623`
+  - Released in: v3.40.0 (January 13, 2026)
+  - Purpose: Sanitize tool_use IDs to match API validation pattern
 - **Linear Issue**: EXT-711
-- **Key Files Changed**:
-  - `src/core/assistant-message/presentAssistantMessage.ts` (7 sanitization calls added)
-  - `src/utils/__tests__/tool-id.spec.ts` (test coverage added)
-- **Validation Logic**: `src/core/task/validateToolResultIds.ts`
-- **ID Sanitization Utility**: `src/utils/tool-id.ts`
+
+### Key Files
+- **presentAssistantMessage.ts**: `src/core/assistant-message/presentAssistantMessage.ts`
+  - Where the fix was applied (7 sanitization calls added)
+- **Task.ts**: `src/core/task/Task.ts`
+  - Where sanitization was originally added (lines 3459-3480)
+- **validateToolResultIds.ts**: `src/core/task/validateToolResultIds.ts`
+  - Validation logic that detected and reported the errors
+- **tool-id.ts**: `src/utils/tool-id.ts`
+  - Created in PR #10649, contains `sanitizeToolUseId()` function
+- **tool-id.spec.ts**: `src/utils/__tests__/tool-id.spec.ts`
+  - Test coverage added in both PRs
+
+### Version Timeline
+- **v3.39.3 and earlier**: No sanitization, no mismatch errors (but had API validation errors)
+- **v3.40.0** (Jan 13, 2026): Bug introduced via PR #10649
+- **v3.40.x - v3.46.0** (Jan 13-30, 2026): Bug persisted, 926 errors reported in v3.46.0
+- **v3.46.1** (Jan 31, 2026): Bug fixed via PR #11131
