@@ -31,100 +31,118 @@ export const statusCommand = command({
 
 		const db = getDb()
 
-		// Get total commits
-		const totalCommitsResult = await db.select({ count: sql<number>`count(*)` }).from(commits)
-		const totalCommits = totalCommitsResult[0]?.count ?? 0
+		// Run all queries in parallel for better performance
+		const [
+			totalCommitsResult,
+			analyzedCommitsResult,
+			deepAnalyzedResult,
+			categoryDistribution,
+			rootCausesResult,
+			causalityLinksResult,
+			patternCountResult,
+			activePatternResult,
+			oldestAnalysisResult,
+			newestAnalysisResult,
+			oldestCommitResult,
+			newestCommitResult,
+			riskDistribution,
+		] = await Promise.all([
+			// Total commits
+			db.select({ count: sql<number>`count(*)` }).from(commits),
 
-		// Get analyzed commits (with classification)
-		const analyzedCommitsResult = await db.select({ count: sql<number>`count(*)` }).from(classifications)
-		const analyzedCommits = analyzedCommitsResult[0]?.count ?? 0
+			// Analyzed commits (with classification)
+			db.select({ count: sql<number>`count(*)` }).from(classifications),
 
-		// Get deep-analyzed commits
-		const deepAnalyzedResult = await db
-			.select({ count: sql<number>`count(*)` })
-			.from(commits)
-			.where(isNotNull(commits.deepAnalyzedAt))
-		const deepAnalyzedCommits = deepAnalyzedResult[0]?.count ?? 0
+			// Deep-analyzed commits
+			db
+				.select({ count: sql<number>`count(*)` })
+				.from(commits)
+				.where(isNotNull(commits.deepAnalyzedAt)),
 
-		// Get category distribution
-		const categoryDistribution = await db
-			.select({
-				category: classifications.category,
-				count: sql<number>`count(*)`,
-				avgRisk: sql<number>`round(avg(${classifications.riskScore}), 1)`,
-			})
-			.from(classifications)
-			.groupBy(classifications.category)
-			.orderBy(desc(sql`count(*)`))
+			// Category distribution
+			db
+				.select({
+					category: classifications.category,
+					count: sql<number>`count(*)`,
+					avgRisk: sql<number>`round(avg(${classifications.riskScore}), 1)`,
+				})
+				.from(classifications)
+				.groupBy(classifications.category)
+				.orderBy(desc(sql`count(*)`)),
 
-		// Get root causes identified
-		const rootCausesResult = await db
-			.select({ count: sql<number>`count(distinct ${bugCausality.causeSha})` })
-			.from(bugCausality)
-		const rootCausesIdentified = rootCausesResult[0]?.count ?? 0
+			// Root causes identified
+			db.select({ count: sql<number>`count(distinct ${bugCausality.causeSha})` }).from(bugCausality),
 
-		// Get total causality links
-		const causalityLinksResult = await db.select({ count: sql<number>`count(*)` }).from(bugCausality)
-		const causalityLinks = causalityLinksResult[0]?.count ?? 0
+			// Total causality links
+			db.select({ count: sql<number>`count(*)` }).from(bugCausality),
 
-		// Get regression patterns count
-		const patternCountResult = await db.select({ count: sql<number>`count(*)` }).from(regressionPatterns)
-		const patternCount = patternCountResult[0]?.count ?? 0
+			// Regression patterns count
+			db.select({ count: sql<number>`count(*)` }).from(regressionPatterns),
 
-		// Get active patterns
-		const activePatternResult = await db
-			.select({ count: sql<number>`count(*)` })
-			.from(regressionPatterns)
-			.where(sql`${regressionPatterns.status} = 'active'`)
-		const activePatterns = activePatternResult[0]?.count ?? 0
+			// Active patterns
+			db
+				.select({ count: sql<number>`count(*)` })
+				.from(regressionPatterns)
+				.where(sql`${regressionPatterns.status} = 'active'`),
 
-		// Get oldest and most recent analysis timestamps
-		// Use direct select queries instead of query builder for better performance
-		const [oldestAnalysis] = await db
-			.select({ date: commits.date, analyzedAt: commits.analyzedAt })
-			.from(commits)
-			.where(isNotNull(commits.analyzedAt))
-			.orderBy(asc(commits.analyzedAt))
-			.limit(1)
+			// Oldest analysis timestamp
+			db
+				.select({ date: commits.date, analyzedAt: commits.analyzedAt })
+				.from(commits)
+				.where(isNotNull(commits.analyzedAt))
+				.orderBy(asc(commits.analyzedAt))
+				.limit(1),
 
-		const [newestAnalysis] = await db
-			.select({ date: commits.date, analyzedAt: commits.analyzedAt })
-			.from(commits)
-			.where(isNotNull(commits.analyzedAt))
-			.orderBy(desc(commits.analyzedAt))
-			.limit(1)
+			// Newest analysis timestamp
+			db
+				.select({ date: commits.date, analyzedAt: commits.analyzedAt })
+				.from(commits)
+				.where(isNotNull(commits.analyzedAt))
+				.orderBy(desc(commits.analyzedAt))
+				.limit(1),
 
-		// Get oldest and most recent commit dates
-		const [oldestCommit] = await db.select({ date: commits.date }).from(commits).orderBy(asc(commits.date)).limit(1)
+			// Oldest commit date
+			db.select({ date: commits.date }).from(commits).orderBy(asc(commits.date)).limit(1),
 
-		const [newestCommit] = await db
-			.select({ date: commits.date })
-			.from(commits)
-			.orderBy(desc(commits.date))
-			.limit(1)
+			// Newest commit date
+			db.select({ date: commits.date }).from(commits).orderBy(desc(commits.date)).limit(1),
 
-		// Get risk score distribution
-		const riskDistribution = await db
-			.select({
-				level: sql<string>`CASE 
+			// Risk score distribution
+			db
+				.select({
+					level: sql<string>`CASE
+						WHEN ${classifications.riskScore} < 25 THEN 'Low (0-24)'
+						WHEN ${classifications.riskScore} < 50 THEN 'Medium (25-49)'
+						WHEN ${classifications.riskScore} < 75 THEN 'High (50-74)'
+						ELSE 'Critical (75-100)'
+					END`,
+					count: sql<number>`count(*)`,
+				})
+				.from(classifications).groupBy(sql`CASE
 					WHEN ${classifications.riskScore} < 25 THEN 'Low (0-24)'
 					WHEN ${classifications.riskScore} < 50 THEN 'Medium (25-49)'
 					WHEN ${classifications.riskScore} < 75 THEN 'High (50-74)'
 					ELSE 'Critical (75-100)'
-				END`,
-				count: sql<number>`count(*)`,
-			})
-			.from(classifications).groupBy(sql`CASE 
-				WHEN ${classifications.riskScore} < 25 THEN 'Low (0-24)'
-				WHEN ${classifications.riskScore} < 50 THEN 'Medium (25-49)'
-				WHEN ${classifications.riskScore} < 75 THEN 'High (50-74)'
-				ELSE 'Critical (75-100)'
-			END`).orderBy(sql`CASE 
-				WHEN ${classifications.riskScore} < 25 THEN 1
-				WHEN ${classifications.riskScore} < 50 THEN 2
-				WHEN ${classifications.riskScore} < 75 THEN 3
-				ELSE 4
-			END`)
+				END`).orderBy(sql`CASE
+					WHEN ${classifications.riskScore} < 25 THEN 1
+					WHEN ${classifications.riskScore} < 50 THEN 2
+					WHEN ${classifications.riskScore} < 75 THEN 3
+					ELSE 4
+				END`),
+		])
+
+		// Extract results
+		const totalCommits = totalCommitsResult[0]?.count ?? 0
+		const analyzedCommits = analyzedCommitsResult[0]?.count ?? 0
+		const deepAnalyzedCommits = deepAnalyzedResult[0]?.count ?? 0
+		const rootCausesIdentified = rootCausesResult[0]?.count ?? 0
+		const causalityLinks = causalityLinksResult[0]?.count ?? 0
+		const patternCount = patternCountResult[0]?.count ?? 0
+		const activePatterns = activePatternResult[0]?.count ?? 0
+		const [oldestAnalysis] = oldestAnalysisResult
+		const [newestAnalysis] = newestAnalysisResult
+		const [oldestCommit] = oldestCommitResult
+		const [newestCommit] = newestCommitResult
 
 		if (args.json) {
 			const output = {
