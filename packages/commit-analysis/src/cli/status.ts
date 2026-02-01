@@ -1,0 +1,254 @@
+import { command, flag, boolean } from "cmd-ts"
+
+export const statusCommand = command({
+	name: "status",
+	description: "Show the status of analysis data in the database",
+	args: {
+		verbose: flag({
+			type: boolean,
+			long: "verbose",
+			short: "v",
+			description: "Show detailed breakdown",
+			defaultValue: () => false,
+		}),
+		json: flag({
+			type: boolean,
+			long: "json",
+			description: "Output as JSON",
+			defaultValue: () => false,
+		}),
+	},
+	handler: async (args) => {
+		// Dynamic imports for faster CLI startup
+		const [{ getDb }, schemaModule, drizzleModule] = await Promise.all([
+			import("../db/db"),
+			import("../db/schema"),
+			import("drizzle-orm"),
+		])
+
+		const { commits, classifications, bugCausality, regressionPatterns } = schemaModule
+		const { sql, desc, asc, isNotNull } = drizzleModule
+
+		const db = getDb()
+
+		// Get total commits
+		const totalCommitsResult = await db.select({ count: sql<number>`count(*)` }).from(commits)
+		const totalCommits = totalCommitsResult[0]?.count ?? 0
+
+		// Get analyzed commits (with classification)
+		const analyzedCommitsResult = await db.select({ count: sql<number>`count(*)` }).from(classifications)
+		const analyzedCommits = analyzedCommitsResult[0]?.count ?? 0
+
+		// Get deep-analyzed commits
+		const deepAnalyzedResult = await db
+			.select({ count: sql<number>`count(*)` })
+			.from(commits)
+			.where(isNotNull(commits.deepAnalyzedAt))
+		const deepAnalyzedCommits = deepAnalyzedResult[0]?.count ?? 0
+
+		// Get category distribution
+		const categoryDistribution = await db
+			.select({
+				category: classifications.category,
+				count: sql<number>`count(*)`,
+				avgRisk: sql<number>`round(avg(${classifications.riskScore}), 1)`,
+			})
+			.from(classifications)
+			.groupBy(classifications.category)
+			.orderBy(desc(sql`count(*)`))
+
+		// Get root causes identified
+		const rootCausesResult = await db
+			.select({ count: sql<number>`count(distinct ${bugCausality.causeSha})` })
+			.from(bugCausality)
+		const rootCausesIdentified = rootCausesResult[0]?.count ?? 0
+
+		// Get total causality links
+		const causalityLinksResult = await db.select({ count: sql<number>`count(*)` }).from(bugCausality)
+		const causalityLinks = causalityLinksResult[0]?.count ?? 0
+
+		// Get regression patterns count
+		const patternCountResult = await db.select({ count: sql<number>`count(*)` }).from(regressionPatterns)
+		const patternCount = patternCountResult[0]?.count ?? 0
+
+		// Get active patterns
+		const activePatternResult = await db
+			.select({ count: sql<number>`count(*)` })
+			.from(regressionPatterns)
+			.where(sql`${regressionPatterns.status} = 'active'`)
+		const activePatterns = activePatternResult[0]?.count ?? 0
+
+		// Get oldest and most recent analysis timestamps
+		const oldestAnalysis = await db.query.commits.findFirst({
+			where: isNotNull(commits.analyzedAt),
+			orderBy: asc(commits.analyzedAt),
+		})
+
+		const newestAnalysis = await db.query.commits.findFirst({
+			where: isNotNull(commits.analyzedAt),
+			orderBy: desc(commits.analyzedAt),
+		})
+
+		// Get oldest and most recent commit dates
+		const oldestCommit = await db.query.commits.findFirst({
+			orderBy: asc(commits.date),
+		})
+
+		const newestCommit = await db.query.commits.findFirst({
+			orderBy: desc(commits.date),
+		})
+
+		// Get risk score distribution
+		const riskDistribution = await db
+			.select({
+				level: sql<string>`CASE 
+					WHEN ${classifications.riskScore} < 25 THEN 'Low (0-24)'
+					WHEN ${classifications.riskScore} < 50 THEN 'Medium (25-49)'
+					WHEN ${classifications.riskScore} < 75 THEN 'High (50-74)'
+					ELSE 'Critical (75-100)'
+				END`,
+				count: sql<number>`count(*)`,
+			})
+			.from(classifications).groupBy(sql`CASE 
+				WHEN ${classifications.riskScore} < 25 THEN 'Low (0-24)'
+				WHEN ${classifications.riskScore} < 50 THEN 'Medium (25-49)'
+				WHEN ${classifications.riskScore} < 75 THEN 'High (50-74)'
+				ELSE 'Critical (75-100)'
+			END`).orderBy(sql`CASE 
+				WHEN ${classifications.riskScore} < 25 THEN 1
+				WHEN ${classifications.riskScore} < 50 THEN 2
+				WHEN ${classifications.riskScore} < 75 THEN 3
+				ELSE 4
+			END`)
+
+		if (args.json) {
+			const output = {
+				commits: {
+					total: totalCommits,
+					analyzed: analyzedCommits,
+					deepAnalyzed: deepAnalyzedCommits,
+				},
+				categories: categoryDistribution.reduce(
+					(acc, row) => {
+						acc[row.category] = { count: row.count, avgRisk: row.avgRisk }
+						return acc
+					},
+					{} as Record<string, { count: number; avgRisk: number }>,
+				),
+				causality: {
+					rootCausesIdentified,
+					totalLinks: causalityLinks,
+				},
+				patterns: {
+					total: patternCount,
+					active: activePatterns,
+				},
+				riskDistribution: riskDistribution.reduce(
+					(acc, row) => {
+						acc[row.level] = row.count
+						return acc
+					},
+					{} as Record<string, number>,
+				),
+				timeRange: {
+					oldestCommit: oldestCommit?.date?.toISOString() ?? null,
+					newestCommit: newestCommit?.date?.toISOString() ?? null,
+					oldestAnalysis: oldestAnalysis?.analyzedAt?.toISOString() ?? null,
+					newestAnalysis: newestAnalysis?.analyzedAt?.toISOString() ?? null,
+				},
+			}
+			console.log(JSON.stringify(output, null, 2))
+			return
+		}
+
+		// Text output
+		console.log("\n╔══════════════════════════════════════════════════════════════╗")
+		console.log("║               COMMIT ANALYSIS STATUS                          ║")
+		console.log("╚══════════════════════════════════════════════════════════════╝\n")
+
+		// Commits section
+		console.log("📊 COMMITS")
+		console.log("─".repeat(50))
+		console.log(`  Total commits:       ${totalCommits.toLocaleString()}`)
+		console.log(`  Analyzed:            ${analyzedCommits.toLocaleString()}`)
+		console.log(`  Deep-analyzed:       ${deepAnalyzedCommits.toLocaleString()}`)
+		if (totalCommits > 0) {
+			const pct = ((analyzedCommits / totalCommits) * 100).toFixed(1)
+			console.log(`  Coverage:            ${pct}%`)
+		}
+
+		// Category distribution
+		if (categoryDistribution.length > 0) {
+			console.log("\n📁 CATEGORIES")
+			console.log("─".repeat(50))
+
+			const maxCount = Math.max(...categoryDistribution.map((c) => c.count))
+			const barWidth = 20
+
+			for (const row of categoryDistribution) {
+				const barLength = Math.round((row.count / maxCount) * barWidth)
+				const bar = "█".repeat(barLength) + "░".repeat(barWidth - barLength)
+				const pct = ((row.count / analyzedCommits) * 100).toFixed(1)
+				console.log(
+					`  ${row.category.padEnd(15)} ${bar} ${row.count.toString().padStart(5)} (${pct.padStart(5)}%)  avg risk: ${row.avgRisk}`,
+				)
+			}
+		}
+
+		// Risk distribution
+		if (riskDistribution.length > 0 && args.verbose) {
+			console.log("\n⚠️  RISK DISTRIBUTION")
+			console.log("─".repeat(50))
+
+			for (const row of riskDistribution) {
+				const pct = ((row.count / analyzedCommits) * 100).toFixed(1)
+				console.log(`  ${row.level.padEnd(20)} ${row.count.toString().padStart(5)} (${pct.padStart(5)}%)`)
+			}
+		}
+
+		// Causality section
+		console.log("\n🔗 BUG CAUSALITY")
+		console.log("─".repeat(50))
+		console.log(`  Root causes identified: ${rootCausesIdentified.toLocaleString()}`)
+		console.log(`  Total causality links:  ${causalityLinks.toLocaleString()}`)
+
+		// Patterns section
+		console.log("\n🔄 REGRESSION PATTERNS")
+		console.log("─".repeat(50))
+		console.log(`  Total patterns:  ${patternCount.toLocaleString()}`)
+		console.log(`  Active patterns: ${activePatterns.toLocaleString()}`)
+
+		// Time range
+		console.log("\n⏱️  TIME RANGE")
+		console.log("─".repeat(50))
+		if (oldestCommit?.date) {
+			console.log(`  Oldest commit:    ${formatDate(oldestCommit.date)}`)
+		}
+		if (newestCommit?.date) {
+			console.log(`  Newest commit:    ${formatDate(newestCommit.date)}`)
+		}
+		if (oldestAnalysis?.analyzedAt) {
+			console.log(`  First analyzed:   ${formatDate(oldestAnalysis.analyzedAt)}`)
+		}
+		if (newestAnalysis?.analyzedAt) {
+			console.log(`  Last analyzed:    ${formatDate(newestAnalysis.analyzedAt)}`)
+		}
+
+		if (oldestCommit?.date && newestCommit?.date) {
+			const days = Math.round((newestCommit.date.getTime() - oldestCommit.date.getTime()) / (1000 * 60 * 60 * 24))
+			console.log(`  Date span:        ${days} days`)
+		}
+
+		console.log("")
+	},
+})
+
+function formatDate(date: Date): string {
+	return date.toLocaleString("en-US", {
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	})
+}

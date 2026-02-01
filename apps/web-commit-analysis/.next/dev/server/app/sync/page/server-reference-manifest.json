@@ -1,0 +1,20 @@
+{
+	"node": {
+		"7080716f2ee8056e13e4bd319e89876c66bd675f9a": {
+			"workers": {
+				"app/sync/page": {
+					"moduleId": "[project]/Roo-Code/apps/web-commit-analysis/.next-internal/server/app/sync/page/actions.js { ACTIONS_MODULE0 => \"[project]/Roo-Code/apps/web-commit-analysis/src/actions/sync.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+					"async": false,
+					"exportedName": "getSyncData",
+					"filename": "Roo-Code/apps/web-commit-analysis/src/actions/sync.ts"
+				}
+			},
+			"layer": {
+				"app/sync/page": "rsc"
+			},
+			"exportedName": "getSyncData",
+			"filename": "Roo-Code/apps/web-commit-analysis/src/actions/sync.ts"
+		}
+	},
+	"edge": {}
+}

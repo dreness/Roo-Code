@@ -1,0 +1,35 @@
+{
+	"node": {
+		"00601b331bdd1c88fb02be79501e637aeb46ba6445": {
+			"workers": {
+				"app/patterns/page": {
+					"moduleId": "[project]/Roo-Code/apps/web-commit-analysis/.next-internal/server/app/patterns/page/actions.js { ACTIONS_MODULE0 => \"[project]/Roo-Code/apps/web-commit-analysis/src/actions/patterns.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+					"async": false,
+					"exportedName": "getPatternsData",
+					"filename": "Roo-Code/apps/web-commit-analysis/src/actions/patterns.ts"
+				}
+			},
+			"layer": {
+				"app/patterns/page": "rsc"
+			},
+			"exportedName": "getPatternsData",
+			"filename": "Roo-Code/apps/web-commit-analysis/src/actions/patterns.ts"
+		},
+		"00c9dbb10b8c15e1a605e3f32065e14a88305d12d5": {
+			"workers": {
+				"app/patterns/page": {
+					"moduleId": "[project]/Roo-Code/apps/web-commit-analysis/.next-internal/server/app/patterns/page/actions.js { ACTIONS_MODULE0 => \"[project]/Roo-Code/apps/web-commit-analysis/src/actions/patterns.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+					"async": false,
+					"exportedName": "getActivePatterns",
+					"filename": "Roo-Code/apps/web-commit-analysis/src/actions/patterns.ts"
+				}
+			},
+			"layer": {
+				"app/patterns/page": "rsc"
+			},
+			"exportedName": "getActivePatterns",
+			"filename": "Roo-Code/apps/web-commit-analysis/src/actions/patterns.ts"
+		}
+	},
+	"edge": {}
+}

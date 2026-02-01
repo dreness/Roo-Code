@@ -1,0 +1,2 @@
+self.__NEXT_FONT_MANIFEST =
+	'{\n  "app": {\n    "[project]/Roo-Code/apps/web-commit-analysis/src/app/page": [\n      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"\n    ],\n    "[project]/Roo-Code/apps/web-commit-analysis/src/app/patterns/page": [\n      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"\n    ],\n    "[project]/Roo-Code/apps/web-commit-analysis/src/app/sync/page": [\n      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"\n    ]\n  },\n  "appUsingSizeAdjust": true,\n  "pages": {},\n  "pagesUsingSizeAdjust": false\n}'

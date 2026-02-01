@@ -1,0 +1,39 @@
+{
+	"name": "@roo-code/commit-analysis",
+	"version": "0.0.0",
+	"description": "Commit analysis framework for Roo Code - classification, risk scoring, and regression detection",
+	"type": "module",
+	"exports": "./src/index.ts",
+	"scripts": {
+		"lint": "eslint src --ext=ts --max-warnings=0",
+		"check-types": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"clean": "rimraf dist .turbo",
+		"cli": "tsx src/cli/index.ts",
+		"drizzle-kit": "tsx node_modules/drizzle-kit/bin.cjs",
+		"db:generate": "pnpm drizzle-kit generate",
+		"db:migrate": "pnpm drizzle-kit migrate",
+		"db:push": "pnpm drizzle-kit push"
+	},
+	"dependencies": {
+		"better-sqlite3": "^11.8.1",
+		"cmd-ts": "^0.13.0",
+		"drizzle-orm": "^0.44.1",
+		"execa": "^9.6.0",
+		"p-queue": "^8.1.0",
+		"zod": "^3.25.61"
+	},
+	"devDependencies": {
+		"@roo-code/config-eslint": "workspace:^",
+		"@roo-code/config-typescript": "workspace:^",
+		"@types/better-sqlite3": "^7.6.12",
+		"@types/node": "^22.13.5",
+		"drizzle-kit": "^0.31.0",
+		"eslint": "^9.26.0",
+		"rimraf": "^6.0.1",
+		"tsx": "^4.19.4",
+		"typescript": "^5.8.2",
+		"vitest": "^3.2.3"
+	}
+}
