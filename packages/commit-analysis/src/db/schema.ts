@@ -20,7 +20,12 @@ export const commits = sqliteTable(
 		analyzedAt: integer("analyzed_at", { mode: "timestamp" }),
 		deepAnalyzedAt: integer("deep_analyzed_at", { mode: "timestamp" }),
 	},
-	(table) => [index("commits_date_idx").on(table.date), index("commits_message_type_idx").on(table.messageType)],
+	(table) => [
+		index("commits_date_idx").on(table.date),
+		index("commits_message_type_idx").on(table.messageType),
+		index("commits_analyzed_at_idx").on(table.analyzedAt),
+		index("commits_deep_analyzed_at_idx").on(table.deepAnalyzedAt),
+	],
 )
 
 export const commitsRelations = relations(commits, ({ many, one }) => ({
@@ -149,6 +154,7 @@ export const bugCausality = sqliteTable(
 	(table) => [
 		index("bug_causality_bug_fix_sha_idx").on(table.bugFixSha),
 		index("bug_causality_cause_sha_idx").on(table.causeSha),
+		index("bug_causality_relationship_type_idx").on(table.relationshipType),
 		uniqueIndex("bug_causality_unique_idx").on(table.bugFixSha, table.causeSha),
 	],
 )
@@ -218,6 +224,7 @@ export const analysisCache = sqliteTable(
 	(table) => [
 		index("analysis_cache_cache_type_idx").on(table.cacheType),
 		index("analysis_cache_expires_at_idx").on(table.expiresAt),
+		index("analysis_cache_file_path_idx").on(table.filePath),
 	],
 )
 

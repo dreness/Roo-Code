@@ -79,24 +79,29 @@ export const statusCommand = command({
 		const activePatterns = activePatternResult[0]?.count ?? 0
 
 		// Get oldest and most recent analysis timestamps
-		const oldestAnalysis = await db.query.commits.findFirst({
-			where: isNotNull(commits.analyzedAt),
-			orderBy: asc(commits.analyzedAt),
-		})
+		// Use direct select queries instead of query builder for better performance
+		const [oldestAnalysis] = await db
+			.select({ date: commits.date, analyzedAt: commits.analyzedAt })
+			.from(commits)
+			.where(isNotNull(commits.analyzedAt))
+			.orderBy(asc(commits.analyzedAt))
+			.limit(1)
 
-		const newestAnalysis = await db.query.commits.findFirst({
-			where: isNotNull(commits.analyzedAt),
-			orderBy: desc(commits.analyzedAt),
-		})
+		const [newestAnalysis] = await db
+			.select({ date: commits.date, analyzedAt: commits.analyzedAt })
+			.from(commits)
+			.where(isNotNull(commits.analyzedAt))
+			.orderBy(desc(commits.analyzedAt))
+			.limit(1)
 
 		// Get oldest and most recent commit dates
-		const oldestCommit = await db.query.commits.findFirst({
-			orderBy: asc(commits.date),
-		})
+		const [oldestCommit] = await db.select({ date: commits.date }).from(commits).orderBy(asc(commits.date)).limit(1)
 
-		const newestCommit = await db.query.commits.findFirst({
-			orderBy: desc(commits.date),
-		})
+		const [newestCommit] = await db
+			.select({ date: commits.date })
+			.from(commits)
+			.orderBy(desc(commits.date))
+			.limit(1)
 
 		// Get risk score distribution
 		const riskDistribution = await db
