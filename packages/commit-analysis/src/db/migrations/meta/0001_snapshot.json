@@ -1,0 +1,1069 @@
+{
+	"version": "6",
+	"dialect": "sqlite",
+	"id": "5a27e1f2-b463-4ec6-9c92-139911d7cae7",
+	"prevId": "1ebe3d31-ce94-4223-ae3a-334eb057c0f8",
+	"tables": {
+		"analysis_cache": {
+			"name": "analysis_cache",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"cache_key": {
+					"name": "cache_key",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"cache_type": {
+					"name": "cache_type",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"file_path": {
+					"name": "file_path",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"line_range": {
+					"name": "line_range",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"result_sha": {
+					"name": "result_sha",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"result_data": {
+					"name": "result_data",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"expires_at": {
+					"name": "expires_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"analysis_cache_cache_key_unique": {
+					"name": "analysis_cache_cache_key_unique",
+					"columns": ["cache_key"],
+					"isUnique": true
+				},
+				"analysis_cache_cache_type_idx": {
+					"name": "analysis_cache_cache_type_idx",
+					"columns": ["cache_type"],
+					"isUnique": false
+				},
+				"analysis_cache_expires_at_idx": {
+					"name": "analysis_cache_expires_at_idx",
+					"columns": ["expires_at"],
+					"isUnique": false
+				},
+				"analysis_cache_file_path_idx": {
+					"name": "analysis_cache_file_path_idx",
+					"columns": ["file_path"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"bug_causality": {
+			"name": "bug_causality",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"bug_fix_sha": {
+					"name": "bug_fix_sha",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"cause_sha": {
+					"name": "cause_sha",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"relationship_type": {
+					"name": "relationship_type",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"confidence": {
+					"name": "confidence",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": 0
+				},
+				"bug_age": {
+					"name": "bug_age",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"bug_age_commits": {
+					"name": "bug_age_commits",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"analysis_method": {
+					"name": "analysis_method",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"notes": {
+					"name": "notes",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"verified_at": {
+					"name": "verified_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"verified_by": {
+					"name": "verified_by",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"investigation_id": {
+					"name": "investigation_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"human_verified": {
+					"name": "human_verified",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": false
+				},
+				"human_confidence": {
+					"name": "human_confidence",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"automation_was_correct": {
+					"name": "automation_was_correct",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"bug_causality_bug_fix_sha_idx": {
+					"name": "bug_causality_bug_fix_sha_idx",
+					"columns": ["bug_fix_sha"],
+					"isUnique": false
+				},
+				"bug_causality_cause_sha_idx": {
+					"name": "bug_causality_cause_sha_idx",
+					"columns": ["cause_sha"],
+					"isUnique": false
+				},
+				"bug_causality_relationship_type_idx": {
+					"name": "bug_causality_relationship_type_idx",
+					"columns": ["relationship_type"],
+					"isUnique": false
+				},
+				"bug_causality_unique_idx": {
+					"name": "bug_causality_unique_idx",
+					"columns": ["bug_fix_sha", "cause_sha"],
+					"isUnique": true
+				}
+			},
+			"foreignKeys": {
+				"bug_causality_bug_fix_sha_commits_sha_fk": {
+					"name": "bug_causality_bug_fix_sha_commits_sha_fk",
+					"tableFrom": "bug_causality",
+					"tableTo": "commits",
+					"columnsFrom": ["bug_fix_sha"],
+					"columnsTo": ["sha"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				},
+				"bug_causality_cause_sha_commits_sha_fk": {
+					"name": "bug_causality_cause_sha_commits_sha_fk",
+					"tableFrom": "bug_causality",
+					"tableTo": "commits",
+					"columnsFrom": ["cause_sha"],
+					"columnsTo": ["sha"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				},
+				"bug_causality_investigation_id_causality_investigations_id_fk": {
+					"name": "bug_causality_investigation_id_causality_investigations_id_fk",
+					"tableFrom": "bug_causality",
+					"tableTo": "causality_investigations",
+					"columnsFrom": ["investigation_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"causality_investigations": {
+			"name": "causality_investigations",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"bug_fix_sha": {
+					"name": "bug_fix_sha",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"investigator": {
+					"name": "investigator",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"started_at": {
+					"name": "started_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"completed_at": {
+					"name": "completed_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"conclusion_type": {
+					"name": "conclusion_type",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"final_cause_sha": {
+					"name": "final_cause_sha",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"confidence_override": {
+					"name": "confidence_override",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"summary": {
+					"name": "summary",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"causality_investigations_bug_fix_sha_idx": {
+					"name": "causality_investigations_bug_fix_sha_idx",
+					"columns": ["bug_fix_sha"],
+					"isUnique": false
+				},
+				"causality_investigations_investigator_idx": {
+					"name": "causality_investigations_investigator_idx",
+					"columns": ["investigator"],
+					"isUnique": false
+				},
+				"causality_investigations_conclusion_type_idx": {
+					"name": "causality_investigations_conclusion_type_idx",
+					"columns": ["conclusion_type"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {
+				"causality_investigations_bug_fix_sha_commits_sha_fk": {
+					"name": "causality_investigations_bug_fix_sha_commits_sha_fk",
+					"tableFrom": "causality_investigations",
+					"tableTo": "commits",
+					"columnsFrom": ["bug_fix_sha"],
+					"columnsTo": ["sha"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				},
+				"causality_investigations_final_cause_sha_commits_sha_fk": {
+					"name": "causality_investigations_final_cause_sha_commits_sha_fk",
+					"tableFrom": "causality_investigations",
+					"tableTo": "commits",
+					"columnsFrom": ["final_cause_sha"],
+					"columnsTo": ["sha"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"classifications": {
+			"name": "classifications",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"commit_sha": {
+					"name": "commit_sha",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"category": {
+					"name": "category",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"confidence": {
+					"name": "confidence",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": 0
+				},
+				"flags": {
+					"name": "flags",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": "'[]'"
+				},
+				"risk_score": {
+					"name": "risk_score",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": 0
+				},
+				"analysis_version": {
+					"name": "analysis_version",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": 1
+				}
+			},
+			"indexes": {
+				"classifications_commit_sha_idx": {
+					"name": "classifications_commit_sha_idx",
+					"columns": ["commit_sha"],
+					"isUnique": true
+				},
+				"classifications_category_idx": {
+					"name": "classifications_category_idx",
+					"columns": ["category"],
+					"isUnique": false
+				},
+				"classifications_risk_score_idx": {
+					"name": "classifications_risk_score_idx",
+					"columns": ["risk_score"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {
+				"classifications_commit_sha_commits_sha_fk": {
+					"name": "classifications_commit_sha_commits_sha_fk",
+					"tableFrom": "classifications",
+					"tableTo": "commits",
+					"columnsFrom": ["commit_sha"],
+					"columnsTo": ["sha"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"commits": {
+			"name": "commits",
+			"columns": {
+				"sha": {
+					"name": "sha",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"short_sha": {
+					"name": "short_sha",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"author": {
+					"name": "author",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"author_email": {
+					"name": "author_email",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"date": {
+					"name": "date",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"message": {
+					"name": "message",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"message_type": {
+					"name": "message_type",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"message_scope": {
+					"name": "message_scope",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"pr_number": {
+					"name": "pr_number",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"files_changed": {
+					"name": "files_changed",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": 0
+				},
+				"insertions": {
+					"name": "insertions",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": 0
+				},
+				"deletions": {
+					"name": "deletions",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": 0
+				},
+				"analyzed_at": {
+					"name": "analyzed_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"deep_analyzed_at": {
+					"name": "deep_analyzed_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"commits_date_idx": {
+					"name": "commits_date_idx",
+					"columns": ["date"],
+					"isUnique": false
+				},
+				"commits_message_type_idx": {
+					"name": "commits_message_type_idx",
+					"columns": ["message_type"],
+					"isUnique": false
+				},
+				"commits_analyzed_at_idx": {
+					"name": "commits_analyzed_at_idx",
+					"columns": ["analyzed_at"],
+					"isUnique": false
+				},
+				"commits_deep_analyzed_at_idx": {
+					"name": "commits_deep_analyzed_at_idx",
+					"columns": ["deep_analyzed_at"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"file_changes": {
+			"name": "file_changes",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"commit_sha": {
+					"name": "commit_sha",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"file_path": {
+					"name": "file_path",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"change_type": {
+					"name": "change_type",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"insertions": {
+					"name": "insertions",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": 0
+				},
+				"deletions": {
+					"name": "deletions",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": 0
+				},
+				"subsystem": {
+					"name": "subsystem",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"file_changes_commit_file_idx": {
+					"name": "file_changes_commit_file_idx",
+					"columns": ["commit_sha", "file_path"],
+					"isUnique": true
+				},
+				"file_changes_subsystem_idx": {
+					"name": "file_changes_subsystem_idx",
+					"columns": ["subsystem"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {
+				"file_changes_commit_sha_commits_sha_fk": {
+					"name": "file_changes_commit_sha_commits_sha_fk",
+					"tableFrom": "file_changes",
+					"tableTo": "commits",
+					"columnsFrom": ["commit_sha"],
+					"columnsTo": ["sha"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"investigation_candidates": {
+			"name": "investigation_candidates",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"investigation_id": {
+					"name": "investigation_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"candidate_sha": {
+					"name": "candidate_sha",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"verdict": {
+					"name": "verdict",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"rejection_reason": {
+					"name": "rejection_reason",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"reasoning": {
+					"name": "reasoning",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"order_examined": {
+					"name": "order_examined",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"investigation_candidates_investigation_id_idx": {
+					"name": "investigation_candidates_investigation_id_idx",
+					"columns": ["investigation_id"],
+					"isUnique": false
+				},
+				"investigation_candidates_verdict_idx": {
+					"name": "investigation_candidates_verdict_idx",
+					"columns": ["verdict"],
+					"isUnique": false
+				},
+				"investigation_candidates_unique_idx": {
+					"name": "investigation_candidates_unique_idx",
+					"columns": ["investigation_id", "candidate_sha"],
+					"isUnique": true
+				}
+			},
+			"foreignKeys": {
+				"investigation_candidates_investigation_id_causality_investigations_id_fk": {
+					"name": "investigation_candidates_investigation_id_causality_investigations_id_fk",
+					"tableFrom": "investigation_candidates",
+					"tableTo": "causality_investigations",
+					"columnsFrom": ["investigation_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				},
+				"investigation_candidates_candidate_sha_commits_sha_fk": {
+					"name": "investigation_candidates_candidate_sha_commits_sha_fk",
+					"tableFrom": "investigation_candidates",
+					"tableTo": "commits",
+					"columnsFrom": ["candidate_sha"],
+					"columnsTo": ["sha"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"investigation_evidence": {
+			"name": "investigation_evidence",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"investigation_id": {
+					"name": "investigation_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"evidence_type": {
+					"name": "evidence_type",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"file_path": {
+					"name": "file_path",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"content_hash": {
+					"name": "content_hash",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"content_preview": {
+					"name": "content_preview",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"captured_at": {
+					"name": "captured_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"investigation_evidence_investigation_id_idx": {
+					"name": "investigation_evidence_investigation_id_idx",
+					"columns": ["investigation_id"],
+					"isUnique": false
+				},
+				"investigation_evidence_evidence_type_idx": {
+					"name": "investigation_evidence_evidence_type_idx",
+					"columns": ["evidence_type"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {
+				"investigation_evidence_investigation_id_causality_investigations_id_fk": {
+					"name": "investigation_evidence_investigation_id_causality_investigations_id_fk",
+					"tableFrom": "investigation_evidence",
+					"tableTo": "causality_investigations",
+					"columnsFrom": ["investigation_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"regression_patterns": {
+			"name": "regression_patterns",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"pattern_hash": {
+					"name": "pattern_hash",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"subsystem": {
+					"name": "subsystem",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"keywords": {
+					"name": "keywords",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": "'[]'"
+				},
+				"file_patterns": {
+					"name": "file_patterns",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": "'[]'"
+				},
+				"first_occurrence": {
+					"name": "first_occurrence",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"occurrence_count": {
+					"name": "occurrence_count",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": 1
+				},
+				"commit_shas": {
+					"name": "commit_shas",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": "'[]'"
+				},
+				"severity": {
+					"name": "severity",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": "'low'"
+				},
+				"status": {
+					"name": "status",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": "'active'"
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"regression_patterns_pattern_hash_unique": {
+					"name": "regression_patterns_pattern_hash_unique",
+					"columns": ["pattern_hash"],
+					"isUnique": true
+				},
+				"regression_patterns_subsystem_idx": {
+					"name": "regression_patterns_subsystem_idx",
+					"columns": ["subsystem"],
+					"isUnique": false
+				},
+				"regression_patterns_status_idx": {
+					"name": "regression_patterns_status_idx",
+					"columns": ["status"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {
+				"regression_patterns_first_occurrence_commits_sha_fk": {
+					"name": "regression_patterns_first_occurrence_commits_sha_fk",
+					"tableFrom": "regression_patterns",
+					"tableTo": "commits",
+					"columnsFrom": ["first_occurrence"],
+					"columnsTo": ["sha"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"releases": {
+			"name": "releases",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"version": {
+					"name": "version",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"date": {
+					"name": "date",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"tag_sha": {
+					"name": "tag_sha",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"fix_count": {
+					"name": "fix_count",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": 0
+				},
+				"feature_count": {
+					"name": "feature_count",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": 0
+				},
+				"total_risk": {
+					"name": "total_risk",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": 0
+				}
+			},
+			"indexes": {
+				"releases_version_unique": {
+					"name": "releases_version_unique",
+					"columns": ["version"],
+					"isUnique": true
+				},
+				"releases_date_idx": {
+					"name": "releases_date_idx",
+					"columns": ["date"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		}
+	},
+	"views": {},
+	"enums": {},
+	"_meta": {
+		"schemas": {},
+		"tables": {},
+		"columns": {}
+	},
+	"internal": {
+		"indexes": {}
+	}
+}

@@ -1,6 +1,7 @@
 import { getCommit } from "@roo-code/commit-analysis"
 import { getCausalityData } from "@/actions/causality"
 import Link from "next/link"
+import { InvestigationPanel } from "@/components/investigations"
 
 export const dynamic = "force-dynamic"
 
@@ -169,6 +170,11 @@ export default async function CommitDetailPage({ params }: Props) {
 											<span className="text-xs text-muted-foreground">
 												{(c.confidence * 100).toFixed(0)}% confidence
 											</span>
+											{c.humanVerified && (
+												<span className="text-xs px-1 rounded bg-green-100 text-green-800">
+													verified
+												</span>
+											)}
 										</div>
 										{c.cause && (
 											<p className="text-sm text-muted-foreground truncate mt-1">
@@ -207,6 +213,15 @@ export default async function CommitDetailPage({ params }: Props) {
 						</div>
 					)}
 				</div>
+			)}
+
+			{/* Investigation Panel - show for bug fixes with causality data */}
+			{causes.length > 0 && (
+				<InvestigationPanel
+					bugFixSha={sha}
+					hasCausality={causes.length > 0}
+					humanVerified={causes.some((c) => c.humanVerified)}
+				/>
 			)}
 		</div>
 	)

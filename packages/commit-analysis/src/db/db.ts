@@ -56,5 +56,19 @@ export function closeDb() {
 	}
 }
 
+/**
+ * Run SQLite ANALYZE to update query planner statistics.
+ * Call this after bulk inserts to ensure queries remain fast.
+ */
+export function analyzeDb(drizzleDb?: ReturnType<typeof createClient>) {
+	const targetDb = drizzleDb || db
+	if (targetDb) {
+		const sqlite = (targetDb as { $client?: { exec: (sql: string) => void } }).$client
+		if (sqlite) {
+			sqlite.exec("ANALYZE")
+		}
+	}
+}
+
 export type DatabaseClient = ReturnType<typeof getDb>
 export type DatabaseOrTransaction = DatabaseClient | Parameters<Parameters<DatabaseClient["transaction"]>[0]>[0]

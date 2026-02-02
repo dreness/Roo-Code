@@ -1,7 +1,7 @@
-import { eq, desc, and, sql, inArray } from "drizzle-orm"
+import { eq, desc, and, sql, inArray, isNotNull, gte, lte } from "drizzle-orm"
 import type { DatabaseOrTransaction } from "../db"
 import { getDb } from "../db"
-import { bugCausality, commits, type InsertBugCausality, type BugCausality } from "../schema"
+import { bugCausality, commits, type InsertBugCausality, type BugCausality, type RelationshipType } from "../schema"
 
 export async function createBugCausality(
 	data: InsertBugCausality,
@@ -138,5 +138,186 @@ export async function getCausalityStats(db: DatabaseOrTransaction = getDb()) {
 		rootCauses: rootCauses[0]?.count ?? 0,
 		verified: verified[0]?.count ?? 0,
 		avgBugAgeDays: avgBugAge[0]?.avg ?? 0,
+	}
+}
+
+// ============================================================================
+// Investigation Feedback Functions
+// ============================================================================
+
+/**
+ * Parameters for linking a causality record to an investigation.
+ * Identify the causality record by either causalityId OR (bugFixSha + causeSha).
+ */
+export type LinkToInvestigationParams =
+	| { causalityId: number; investigationId: number }
+	| { bugFixSha: string; causeSha: string; investigationId: number }
+
+/**
+ * Links a causality record to an investigation.
+ * Sets the investigationId field on the bug_causality record.
+ */
+export async function linkToInvestigation(
+	params: LinkToInvestigationParams,
+	db: DatabaseOrTransaction = getDb(),
+): Promise<BugCausality | null> {
+	const whereClause =
+		"causalityId" in params
+			? eq(bugCausality.id, params.causalityId)
+			: and(eq(bugCausality.bugFixSha, params.bugFixSha), eq(bugCausality.causeSha, params.causeSha))
+
+	const result = await db
+		.update(bugCausality)
+		.set({ investigationId: params.investigationId })
+		.where(whereClause)
+		.returning()
+
+	return result[0] ?? null
+}
+
+/**
+ * Parameters for recording human feedback on a causality record.
+ * Identify the causality record by either causalityId OR (bugFixSha + causeSha).
+ */
+export type RecordHumanFeedbackParams =
+	| {
+			causalityId: number
+			humanVerified: boolean
+			humanConfidence?: number
+			automationWasCorrect?: boolean
+	  }
+	| {
+			bugFixSha: string
+			causeSha: string
+			humanVerified: boolean
+			humanConfidence?: number
+			automationWasCorrect?: boolean
+	  }
+
+/**
+ * Records human feedback on a causality record.
+ * Updates humanVerified, humanConfidence, and automationWasCorrect fields.
+ */
+export async function recordHumanFeedback(
+	params: RecordHumanFeedbackParams,
+	db: DatabaseOrTransaction = getDb(),
+): Promise<BugCausality | null> {
+	const whereClause =
+		"causalityId" in params
+			? eq(bugCausality.id, params.causalityId)
+			: and(eq(bugCausality.bugFixSha, params.bugFixSha), eq(bugCausality.causeSha, params.causeSha))
+
+	const updateData: {
+		humanVerified: boolean
+		humanConfidence?: number
+		automationWasCorrect?: boolean
+	} = {
+		humanVerified: params.humanVerified,
+	}
+
+	if (params.humanConfidence !== undefined) {
+		updateData.humanConfidence = params.humanConfidence
+	}
+
+	if (params.automationWasCorrect !== undefined) {
+		updateData.automationWasCorrect = params.automationWasCorrect
+	}
+
+	const result = await db.update(bugCausality).set(updateData).where(whereClause).returning()
+
+	return result[0] ?? null
+}
+
+/**
+ * Filter parameters for automation accuracy statistics
+ */
+export interface AutomationAccuracyFilters {
+	/** Filter by date range (based on createdAt) */
+	dateFrom?: Date
+	dateTo?: Date
+	/** Filter by relationship type */
+	relationshipType?: RelationshipType
+	/** Filter by analysis method */
+	analysisMethod?: string
+}
+
+/**
+ * Result of automation accuracy calculations
+ */
+export interface AutomationAccuracyResult {
+	/** Total number of human-verified records */
+	totalVerified: number
+	/** Number of records where automation was correct */
+	totalCorrect: number
+	/** Accuracy rate as a decimal (0-1) */
+	accuracyRate: number
+	/** Average difference between automation confidence and human confidence */
+	avgConfidenceDelta: number
+}
+
+/**
+ * Gets aggregate statistics about automation accuracy based on human feedback.
+ * Calculates from bug_causality records where humanVerified = true.
+ */
+export async function getAutomationAccuracy(
+	filters?: AutomationAccuracyFilters,
+	db: DatabaseOrTransaction = getDb(),
+): Promise<AutomationAccuracyResult> {
+	// Build where conditions
+	const conditions = [eq(bugCausality.humanVerified, true)]
+
+	if (filters?.dateFrom) {
+		conditions.push(gte(bugCausality.createdAt, filters.dateFrom))
+	}
+
+	if (filters?.dateTo) {
+		conditions.push(lte(bugCausality.createdAt, filters.dateTo))
+	}
+
+	if (filters?.relationshipType) {
+		conditions.push(eq(bugCausality.relationshipType, filters.relationshipType))
+	}
+
+	if (filters?.analysisMethod) {
+		conditions.push(eq(bugCausality.analysisMethod, filters.analysisMethod))
+	}
+
+	const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0]
+
+	// Get total verified count
+	const totalVerifiedResult = await db
+		.select({ count: sql<number>`count(*)` })
+		.from(bugCausality)
+		.where(whereClause)
+
+	const totalVerified = totalVerifiedResult[0]?.count ?? 0
+
+	// Get total correct count (where automationWasCorrect = true)
+	const totalCorrectResult = await db
+		.select({ count: sql<number>`count(*)` })
+		.from(bugCausality)
+		.where(and(whereClause, eq(bugCausality.automationWasCorrect, true)))
+
+	const totalCorrect = totalCorrectResult[0]?.count ?? 0
+
+	// Calculate average confidence delta (humanConfidence - confidence)
+	// Only for records that have both values
+	const avgDeltaResult = await db
+		.select({
+			avgDelta: sql<number>`avg(${bugCausality.humanConfidence} - ${bugCausality.confidence})`,
+		})
+		.from(bugCausality)
+		.where(and(whereClause, isNotNull(bugCausality.humanConfidence)))
+
+	const avgConfidenceDelta = avgDeltaResult[0]?.avgDelta ?? 0
+
+	// Calculate accuracy rate
+	const accuracyRate = totalVerified > 0 ? totalCorrect / totalVerified : 0
+
+	return {
+		totalVerified,
+		totalCorrect,
+		accuracyRate,
+		avgConfidenceDelta,
 	}
 }

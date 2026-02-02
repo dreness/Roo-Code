@@ -43,7 +43,7 @@ export const deepAnalyzeCommand = command({
 	},
 	handler: async (args) => {
 		// Dynamic imports for faster CLI startup
-		const [{ default: PQueue }, { getDb }, commitsModule, causalityDbModule, { analyzeBugCausality }] =
+		const [{ default: PQueue }, dbModule, commitsModule, causalityDbModule, { analyzeBugCausality }] =
 			await Promise.all([
 				import("p-queue"),
 				import("../db/db"),
@@ -52,6 +52,7 @@ export const deepAnalyzeCommand = command({
 				import("../causality/analyzer"),
 			])
 
+		const { getDb, analyzeDb } = dbModule
 		const { getUnanalyzedCommits, markCommitDeepAnalyzed, getCommit } = commitsModule
 		const { createBugCausality, getCausalityStats } = causalityDbModule
 
@@ -128,6 +129,10 @@ export const deepAnalyzeCommand = command({
 			await Promise.all(jobs)
 			console.log(`  Processed ${Math.min(i + args.batchSize, bugFixes.length)}/${bugFixes.length}`)
 		}
+
+		// Update SQLite query planner statistics after bulk inserts
+		console.log(`\nUpdating database statistics...`)
+		analyzeDb(db)
 
 		// Print summary
 		const stats = await getCausalityStats(db)

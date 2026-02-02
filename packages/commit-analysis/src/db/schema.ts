@@ -130,6 +130,73 @@ export const releases = sqliteTable(
 export const relationshipTypes = ["root_cause", "related_to"] as const
 export type RelationshipType = (typeof relationshipTypes)[number]
 
+// Investigation conclusion types
+export const conclusionTypes = [
+	"confirmed", // Human confirmed automated causality
+	"rejected", // Human determined automated causality was wrong
+	"inconclusive", // Human could not determine causality
+	"new_cause_found", // Human found a different root cause
+] as const
+export type ConclusionType = (typeof conclusionTypes)[number]
+
+// Investigation candidate verdicts
+export const candidateVerdicts = [
+	"root_cause", // This commit is the root cause
+	"contributing", // This commit contributed but isn't primary cause
+	"ruled_out", // This commit was considered but ruled out
+	"uncertain", // Could not determine
+] as const
+export type CandidateVerdict = (typeof candidateVerdicts)[number]
+
+// Investigation evidence types
+export const evidenceTypes = [
+	"blame", // git blame output
+	"diff", // git diff output
+	"bisect", // git bisect session
+	"log", // git log output
+	"manual_note", // Investigator's note
+] as const
+export type EvidenceType = (typeof evidenceTypes)[number]
+
+// Causality investigations - Human investigation sessions for bug causality
+export const causalityInvestigations = sqliteTable(
+	"causality_investigations",
+	{
+		id: integer("id").primaryKey({ autoIncrement: true }),
+		bugFixSha: text("bug_fix_sha")
+			.notNull()
+			.references(() => commits.sha, { onDelete: "cascade" }),
+		investigator: text("investigator").notNull(),
+		startedAt: integer("started_at", { mode: "timestamp" }).notNull(),
+		completedAt: integer("completed_at", { mode: "timestamp" }),
+		conclusionType: text("conclusion_type", { enum: conclusionTypes }),
+		finalCauseSha: text("final_cause_sha").references(() => commits.sha),
+		confidenceOverride: real("confidence_override"),
+		summary: text("summary"),
+	},
+	(table) => [
+		index("causality_investigations_bug_fix_sha_idx").on(table.bugFixSha),
+		index("causality_investigations_investigator_idx").on(table.investigator),
+		index("causality_investigations_conclusion_type_idx").on(table.conclusionType),
+	],
+)
+
+export const causalityInvestigationsRelations = relations(causalityInvestigations, ({ one, many }) => ({
+	bugFix: one(commits, {
+		fields: [causalityInvestigations.bugFixSha],
+		references: [commits.sha],
+		relationName: "investigatedFixes",
+	}),
+	finalCause: one(commits, {
+		fields: [causalityInvestigations.finalCauseSha],
+		references: [commits.sha],
+		relationName: "finalCauseOf",
+	}),
+	candidates: many(investigationCandidates),
+	evidence: many(investigationEvidence),
+	bugCausalityRecords: many(bugCausality),
+}))
+
 // Bug causality - Links bug fixes to their root causes
 export const bugCausality = sqliteTable(
 	"bug_causality",
@@ -150,6 +217,11 @@ export const bugCausality = sqliteTable(
 		createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 		verifiedAt: integer("verified_at", { mode: "timestamp" }),
 		verifiedBy: text("verified_by"),
+		// New columns for interactive research
+		investigationId: integer("investigation_id").references(() => causalityInvestigations.id),
+		humanVerified: integer("human_verified", { mode: "boolean" }).default(false),
+		humanConfidence: real("human_confidence"),
+		automationWasCorrect: integer("automation_was_correct", { mode: "boolean" }),
 	},
 	(table) => [
 		index("bug_causality_bug_fix_sha_idx").on(table.bugFixSha),
@@ -169,6 +241,71 @@ export const bugCausalityRelations = relations(bugCausality, ({ one }) => ({
 		fields: [bugCausality.causeSha],
 		references: [commits.sha],
 		relationName: "causedBugs",
+	}),
+	investigation: one(causalityInvestigations, {
+		fields: [bugCausality.investigationId],
+		references: [causalityInvestigations.id],
+	}),
+}))
+
+// Investigation candidates - Commits examined during investigation
+export const investigationCandidates = sqliteTable(
+	"investigation_candidates",
+	{
+		id: integer("id").primaryKey({ autoIncrement: true }),
+		investigationId: integer("investigation_id")
+			.notNull()
+			.references(() => causalityInvestigations.id, { onDelete: "cascade" }),
+		candidateSha: text("candidate_sha")
+			.notNull()
+			.references(() => commits.sha, { onDelete: "cascade" }),
+		verdict: text("verdict", { enum: candidateVerdicts }).notNull(),
+		rejectionReason: text("rejection_reason"),
+		reasoning: text("reasoning"),
+		orderExamined: integer("order_examined"),
+	},
+	(table) => [
+		index("investigation_candidates_investigation_id_idx").on(table.investigationId),
+		index("investigation_candidates_verdict_idx").on(table.verdict),
+		uniqueIndex("investigation_candidates_unique_idx").on(table.investigationId, table.candidateSha),
+	],
+)
+
+export const investigationCandidatesRelations = relations(investigationCandidates, ({ one }) => ({
+	investigation: one(causalityInvestigations, {
+		fields: [investigationCandidates.investigationId],
+		references: [causalityInvestigations.id],
+	}),
+	candidate: one(commits, {
+		fields: [investigationCandidates.candidateSha],
+		references: [commits.sha],
+	}),
+}))
+
+// Investigation evidence - Evidence collected during investigation
+export const investigationEvidence = sqliteTable(
+	"investigation_evidence",
+	{
+		id: integer("id").primaryKey({ autoIncrement: true }),
+		investigationId: integer("investigation_id")
+			.notNull()
+			.references(() => causalityInvestigations.id, { onDelete: "cascade" }),
+		evidenceType: text("evidence_type", { enum: evidenceTypes }).notNull(),
+		filePath: text("file_path"),
+		contentHash: text("content_hash"),
+		contentPreview: text("content_preview"),
+		capturedAt: integer("captured_at", { mode: "timestamp" }).notNull(),
+	},
+	(table) => [
+		index("investigation_evidence_investigation_id_idx").on(table.investigationId),
+		index("investigation_evidence_evidence_type_idx").on(table.evidenceType),
+	],
+)
+
+export const investigationEvidenceRelations = relations(investigationEvidence, ({ one }) => ({
+	investigation: one(causalityInvestigations, {
+		fields: [investigationEvidence.investigationId],
+		references: [causalityInvestigations.id],
 	}),
 }))
 
@@ -246,6 +383,15 @@ export type InsertRelease = Omit<typeof releases.$inferInsert, "id">
 export type BugCausality = typeof bugCausality.$inferSelect
 export type InsertBugCausality = Omit<typeof bugCausality.$inferInsert, "id" | "createdAt">
 
+export type CausalityInvestigation = typeof causalityInvestigations.$inferSelect
+export type InsertCausalityInvestigation = Omit<typeof causalityInvestigations.$inferInsert, "id">
+
+export type InvestigationCandidate = typeof investigationCandidates.$inferSelect
+export type InsertInvestigationCandidate = Omit<typeof investigationCandidates.$inferInsert, "id">
+
+export type InvestigationEvidence = typeof investigationEvidence.$inferSelect
+export type InsertInvestigationEvidence = Omit<typeof investigationEvidence.$inferInsert, "id">
+
 export type RegressionPattern = typeof regressionPatterns.$inferSelect
 export type InsertRegressionPattern = Omit<typeof regressionPatterns.$inferInsert, "id" | "createdAt" | "updatedAt">
 
@@ -261,8 +407,14 @@ export const schema = {
 	classifications,
 	classificationsRelations,
 	releases,
+	causalityInvestigations,
+	causalityInvestigationsRelations,
 	bugCausality,
 	bugCausalityRelations,
+	investigationCandidates,
+	investigationCandidatesRelations,
+	investigationEvidence,
+	investigationEvidenceRelations,
 	regressionPatterns,
 	analysisCache,
 }

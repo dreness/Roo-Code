@@ -1,0 +1,146 @@
+---
+title: Commit Analysis Database Schema
+---
+
+erDiagram
+    %% Core relationships (FK-constrained)
+    commits ||--o{ file_changes : "has"
+    commits ||--o| classifications : "has"
+    commits ||--o{ bug_causality : "causes"
+    commits ||--o{ bug_causality : "fixes"
+    commits ||--o{ causality_investigations : "investigated"
+    commits ||--o{ investigation_candidates : "examined as"
+    commits ||--o{ regression_patterns : "first occurrence"
+
+    causality_investigations ||--o{ investigation_candidates : "examines"
+    causality_investigations ||--o{ investigation_evidence : "collects"
+    causality_investigations ||--o{ bug_causality : "produces"
+
+    %% Standalone tables (no FK relationships)
+    %% releases: Pre-computed aggregates per version, commit association computed via date range or git ancestry
+    %% analysis_cache: Key-value cache for git operations, no FK constraints
+
+    commits {
+        text sha PK "Primary key"
+        text short_sha "Short hash"
+        text author "Author name"
+        text author_email "Author email"
+        timestamp date "Commit date"
+        text message "Full commit message"
+        text message_type "fix|feat|chore|etc"
+        text message_scope "ui|provider|etc"
+        integer pr_number "PR number"
+        integer files_changed "File count"
+        integer insertions "Lines added"
+        integer deletions "Lines removed"
+        timestamp analyzed_at "Basic analysis time"
+        timestamp deep_analyzed_at "Deep analysis time"
+    }
+
+    file_changes {
+        integer id PK "Auto increment"
+        text commit_sha FK "References commits.sha"
+        text file_path "Path to file"
+        text change_type "A|M|D|R"
+        integer insertions "Lines added"
+        integer deletions "Lines removed"
+        text subsystem "Classified subsystem"
+    }
+
+    classifications {
+        integer id PK "Auto increment"
+        text commit_sha FK,UK "References commits.sha"
+        text category "bugfix|feature|refactor|etc"
+        real confidence "Classification confidence 0-1"
+        json flags "Array of risk flags"
+        real risk_score "Calculated risk 0-100"
+        integer analysis_version "Schema version"
+    }
+
+    releases {
+        integer id PK "Auto increment"
+        text version UK "Semantic version"
+        timestamp date "Release date"
+        text tag_sha "Git tag SHA"
+        integer fix_count "Bug fixes in release"
+        integer feature_count "Features in release"
+        real total_risk "Sum of commit risks"
+    }
+
+    bug_causality {
+        integer id PK "Auto increment"
+        text bug_fix_sha FK "References commits.sha"
+        text cause_sha FK "References commits.sha"
+        text relationship_type "root_cause|related_to"
+        real confidence "Detection confidence"
+        integer bug_age "Days between cause and fix"
+        integer bug_age_commits "Commits between"
+        text analysis_method "explicit|blame|semantic|temporal"
+        text notes "Analysis notes"
+        timestamp created_at "Detection time"
+        timestamp verified_at "Human verification time"
+        text verified_by "Verifier ID"
+        integer investigation_id FK "References investigations"
+        boolean human_verified "Human reviewed flag"
+        real human_confidence "Human assigned confidence"
+        boolean automation_was_correct "Feedback flag"
+    }
+
+    causality_investigations {
+        integer id PK "Auto increment"
+        text bug_fix_sha FK "References commits.sha"
+        text investigator "Investigator ID"
+        timestamp started_at "Session start"
+        timestamp completed_at "Session end"
+        text conclusion_type "confirmed|rejected|inconclusive|new_cause_found"
+        text final_cause_sha FK "Human determined cause"
+        real confidence_override "Human confidence"
+        text summary "Investigation summary"
+    }
+
+    investigation_candidates {
+        integer id PK "Auto increment"
+        integer investigation_id FK "References investigations"
+        text candidate_sha FK "References commits.sha"
+        text verdict "root_cause|contributing|ruled_out|uncertain"
+        text rejection_reason "Why ruled out"
+        text reasoning "Analysis reasoning"
+        integer order_examined "Examination order"
+    }
+
+    investigation_evidence {
+        integer id PK "Auto increment"
+        integer investigation_id FK "References investigations"
+        text evidence_type "blame|diff|bisect|log|manual_note"
+        text file_path "Related file"
+        text content_hash "Hash for dedup"
+        text content_preview "Truncated content"
+        timestamp captured_at "Capture time"
+    }
+
+    regression_patterns {
+        integer id PK "Auto increment"
+        text pattern_hash UK "Unique pattern ID"
+        text subsystem "Affected subsystem"
+        json keywords "Matching keywords"
+        json file_patterns "File path patterns"
+        text first_occurrence FK "First commit SHA"
+        integer occurrence_count "Times seen"
+        json commit_shas "All related commits"
+        text severity "low|medium|high"
+        text status "active|resolved"
+        timestamp created_at "First detection"
+        timestamp updated_at "Last update"
+    }
+
+    analysis_cache {
+        integer id PK "Auto increment"
+        text cache_key UK "Unique cache key"
+        text cache_type "blame|bisect|diff|log"
+        text file_path "Cached file"
+        text line_range "Line range cached"
+        text result_sha "Result commit SHA"
+        json result_data "Cached result"
+        timestamp created_at "Cache time"
+        timestamp expires_at "Expiration"
+    }

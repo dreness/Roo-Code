@@ -44,7 +44,7 @@ export const analyzeCommand = command({
 		// Dynamic imports for faster CLI startup
 		const [
 			{ default: PQueue },
-			{ getDb },
+			{ getDb, analyzeDb },
 			{ createCommit, createFileChanges, getLatestCommit },
 			{ createClassification },
 			{ extractCommits, extractFileChanges, getGitCommitCount },
@@ -199,6 +199,10 @@ export const analyzeCommand = command({
 		)
 
 		await Promise.all(jobs)
+
+		// Update SQLite query planner statistics after bulk inserts
+		console.log(`\nUpdating database statistics...`)
+		analyzeDb(db)
 
 		console.log(`\nAnalysis complete:`)
 		console.log(`  - Processed: ${processed} commits`)
