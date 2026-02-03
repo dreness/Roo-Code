@@ -171,7 +171,6 @@ export const syncUpstreamCommand = command({
 				{ classifyBySemantic },
 				{ detectSubsystem },
 				{ calculateRiskScore },
-				{ detectRegression },
 			] = await Promise.all([
 				import("p-queue"),
 				import("../db/db"),
@@ -182,7 +181,6 @@ export const syncUpstreamCommand = command({
 				import("../classifiers/semantic"),
 				import("../classifiers/subsystem"),
 				import("../scoring/risk"),
-				import("../detection/regression"),
 			])
 
 			const db = getDb()
@@ -206,17 +204,18 @@ export const syncUpstreamCommand = command({
 					queue.add(async () => {
 						// Extract file changes
 						const fileChanges = await extractFileChanges(commit.sha, repoPath)
-						const filePaths = fileChanges.map((f) => f.path)
+						const filePaths = fileChanges.map((f) => f.filePath)
 
 						// Classify
 						const conventionalResult = classifyByConventionalCommit(commit.message)
 						const semanticResult = classifyBySemantic(commit.message)
-						const subsystems = detectSubsystem(filePaths)
 
 						// Use conventional commit result if confident, else semantic
 						const category =
-							conventionalResult.confidence > 0.7 ? conventionalResult.category : semanticResult.category
-						const confidence = Math.max(conventionalResult.confidence, semanticResult.confidence)
+							conventionalResult && conventionalResult.confidence > 0.7
+								? conventionalResult.category
+								: semanticResult.category
+						const confidence = Math.max(conventionalResult?.confidence ?? 0, semanticResult.confidence)
 
 						// Calculate risk
 						const riskScore = calculateRiskScore(
@@ -225,19 +224,6 @@ export const syncUpstreamCommand = command({
 							filePaths,
 							commit.insertions,
 							commit.deletions,
-						)
-
-						// Detect regression patterns
-						const _regressionResult = await detectRegression(
-							{
-								sha: commit.sha,
-								message: commit.message,
-								filePaths,
-								subsystems,
-								category,
-								date: commit.date,
-							},
-							db,
 						)
 
 						// Store commit
@@ -264,11 +250,11 @@ export const syncUpstreamCommand = command({
 							await createFileChanges(
 								fileChanges.map((fc) => ({
 									commitSha: commit.sha,
-									filePath: fc.path,
+									filePath: fc.filePath,
 									changeType: fc.changeType,
 									insertions: fc.insertions,
 									deletions: fc.deletions,
-									subsystem: detectSubsystem([fc.path])[0] || "other",
+									subsystem: detectSubsystem(fc.filePath) || "other",
 								})),
 								db,
 							)
@@ -280,10 +266,8 @@ export const syncUpstreamCommand = command({
 								commitSha: commit.sha,
 								category,
 								confidence,
-								subsystems,
 								flags: [],
-								riskScore,
-								analyzedAt: new Date(),
+								riskScore: riskScore.finalScore,
 							},
 							db,
 						)

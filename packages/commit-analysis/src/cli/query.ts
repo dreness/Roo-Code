@@ -1,4 +1,4 @@
-import { command, flag, boolean, option, string, optional, multioption, positional } from "cmd-ts"
+import { command, flag, boolean, option, string, optional, multioption, positional, array } from "cmd-ts"
 
 export const queryCommand = command({
 	name: "query",
@@ -29,7 +29,7 @@ export const queryCommand = command({
 			description: "Filter queries by category",
 		}),
 		param: multioption({
-			type: string,
+			type: array(string),
 			long: "param",
 			short: "p",
 			description: "Query parameter in key=value format (can be repeated)",
@@ -71,9 +71,8 @@ export const queryCommand = command({
 			if (args.category) {
 				console.log(`Category: ${args.category}\n`)
 				for (const q of queries) {
-					const query = "name" in q ? q : { name: q.name, description: q.description }
-					console.log(`  ${query.name}`)
-					console.log(`    ${query.description}\n`)
+					console.log(`  ${q.name}`)
+					console.log(`    ${q.description}\n`)
 				}
 			} else {
 				// Group by category

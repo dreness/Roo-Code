@@ -326,8 +326,8 @@ describe("analytics", () => {
 					{
 						causalityId: causality.id,
 						humanVerified: true,
-						humanConfidence: record.humanConfidence,
-						automationWasCorrect: record.automationWasCorrect,
+						humanConfidence: record.humanConfidence ?? undefined,
+						automationWasCorrect: record.automationWasCorrect ?? undefined,
 					},
 					db,
 				)
@@ -591,7 +591,7 @@ describe("analytics", () => {
 				{
 					bugFixSha: testCommits[0]!.sha,
 					causeSha: testCommits[3]!.sha,
-					relationshipType: "contributing" as const,
+					relationshipType: "related_to" as const,
 					confidence: 0.7,
 					analysisMethod: "semantic",
 					humanVerified: true,
@@ -611,7 +611,7 @@ describe("analytics", () => {
 				{
 					bugFixSha: testCommits[1]!.sha,
 					causeSha: testCommits[4]!.sha,
-					relationshipType: "contributing" as const,
+					relationshipType: "related_to" as const,
 					confidence: 0.6,
 					analysisMethod: "explicit",
 					humanVerified: false, // Not verified
@@ -637,8 +637,8 @@ describe("analytics", () => {
 						{
 							causalityId: causality.id,
 							humanVerified: record.humanVerified,
-							humanConfidence: record.humanConfidence,
-							automationWasCorrect: record.automationWasCorrect,
+							humanConfidence: record.humanConfidence ?? undefined,
+							automationWasCorrect: record.automationWasCorrect ?? undefined,
 						},
 						db,
 					)

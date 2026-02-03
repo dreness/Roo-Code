@@ -50,8 +50,19 @@ export function listQueryNames(): string[] {
 // Re-export individual category modules
 export * from "./commit"
 export * from "./causality"
-export * from "./investigation"
 export * from "./candidate"
-export * from "./regression"
 export * from "./feedback"
 export * from "./stats"
+// Export investigation with aliases to avoid conflicts
+export {
+	forCommit,
+	fullDetails,
+	candidates,
+	evidence,
+	recent,
+	bySubsystem as investigationBySubsystem,
+	inProgress,
+	byConclusion,
+} from "./investigation"
+// Export regression with aliases to avoid conflicts
+export { bySubsystem as regressionBySubsystem, active } from "./regression"

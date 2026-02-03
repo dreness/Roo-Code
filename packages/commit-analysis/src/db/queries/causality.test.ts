@@ -340,7 +340,7 @@ describe("causality", () => {
 				{
 					bugFixSha: testCommits[0]!.sha,
 					causeSha: testCommits[2]!.sha,
-					relationshipType: "contributing" as const,
+					relationshipType: "related_to" as const,
 					confidence: 0.6,
 					analysisMethod: "semantic",
 					humanVerified: true,

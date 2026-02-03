@@ -27,6 +27,9 @@ export async function getTimelineData(): Promise<ReleaseWithCommits[]> {
 			const release = releases[i]
 			const nextRelease = releases[i + 1]
 
+			// Skip if release is undefined
+			if (!release) continue
+
 			// Get commits between this release and the next one
 			const releaseCommits = commits.filter((c) => {
 				if (nextRelease) {

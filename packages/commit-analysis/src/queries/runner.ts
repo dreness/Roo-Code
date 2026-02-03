@@ -294,16 +294,16 @@ export function formatResults<T>(result: QueryResult<T>, format: "json" | "table
 				return Math.min(40, Math.max(col.length, ...values.map((v) => v.length)))
 			})
 
-			const header = cols.map((col, i) => col.padEnd(colWidths[i])).join(" | ")
+			const header = cols.map((col, i) => col.padEnd(colWidths[i] ?? 0)).join(" | ")
 			const separator = colWidths.map((w) => "-".repeat(w)).join("-+-")
 
 			const rows = result.rows.map((row) =>
 				cols
 					.map((col, i) => {
 						const val = String((row as Record<string, unknown>)[col] ?? "")
-						return val.length > colWidths[i]
-							? val.slice(0, colWidths[i] - 3) + "..."
-							: val.padEnd(colWidths[i])
+						return val.length > (colWidths[i] ?? 0)
+							? val.slice(0, (colWidths[i] ?? 3) - 3) + "..."
+							: val.padEnd(colWidths[i] ?? 0)
 					})
 					.join(" | "),
 			)
