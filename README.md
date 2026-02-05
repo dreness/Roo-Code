@@ -79,6 +79,7 @@ Learn more: [Using Modes](https://docs.roocode.com/basic-usage/using-modes) • 
 ## Resources
 
 - **[Documentation](https://docs.roocode.com):** The official guide to installing, configuring, and mastering Roo Code.
+- **[Self-Hosting Guide](SELF_HOSTING.md):** Learn how to replace Roo Cloud with your own self-hosted services.
 - **[YouTube Channel](https://youtube.com/@roocodeyt?feature=shared):** Watch tutorials and see features in action.
 - **[Discord Server](https://discord.gg/roocode):** Join the community for real-time help and discussion.
 - **[Reddit Community](https://www.reddit.com/r/RooCode):** Share your experiences and see what others are building.
