@@ -69,6 +69,10 @@ This meant that if a user selected "medium" effort for one model (like `gemini-3
 **Date**: February 4, 2026  
 **Author**: Daniel
 
+### Background
+
+The `hasContent` tracking was originally introduced in commit [47320dca6](https://github.com/RooCodeInc/Roo-Code/commit/47320dca6) on December 11, 2025, to handle cases where the model returned only reasoning tokens but no actual output.
+
 ### What Happened
 
 The AI SDK migration removed the `hasContent` tracking that existed in the previous implementation. Before the migration, the code tracked whether any actual content was yielded:
@@ -125,7 +129,8 @@ Additionally, when the stream produced no output, the AI SDK would throw `NoOutp
 | Nov 17, 2025 | f7c2e8d16 | Improve Google Gemini defaults | **Bug 1 introduced**: No thinkingLevel validation |
 | Nov 18, 2025 | 55e9c880d | Fix gemini maxOutputTokens and reasoning config | Bug 1 remains |
 | Dec 9, 2025 | 048e7f350 | Add minimal and medium reasoning effort levels | Bug 1 remains (expanded scope) |
-| Feb 4, 2026 | afe51e0fe | Migrate Gemini and Vertex to AI SDK | **Bug 2 introduced**: Empty stream handling removed |
+| Dec 11, 2025 | 47320dca6 | Fix empty Gemini responses and reasoning loops | hasContent tracking introduced |
+| Feb 4, 2026 | afe51e0fe | Migrate Gemini and Vertex to AI SDK | **Bug 2 introduced**: Empty stream handling removed during refactor |
 | Feb 7, 2026 | 12cddc969 | **Fix both bugs** | Both bugs fixed |
 
 ## Technical Details of the Fix
@@ -204,7 +209,11 @@ try {
 
 ## Conclusion
 
-- **Problem 1 (thinkingLevel validation)**: Active for ~82 days from introduction to fix
-- **Problem 2 (empty stream handling)**: Active for ~3 days from introduction to fix
+- **Problem 1 (thinkingLevel validation)**: Active for ~82 days from introduction to fix (Nov 17, 2025 - Feb 7, 2026)
+- **Problem 2 (empty stream handling)**: 
+  - Originally implemented on Dec 11, 2025 (47320dca6)
+  - Accidentally removed during AI SDK migration on Feb 4, 2026 (afe51e0fe)
+  - Re-implemented on Feb 7, 2026 (12cddc969)
+  - Bug active for ~3 days (Feb 4-7, 2026)
 
-Both problems were introduced during refactoring/feature addition work and were fixed together in a single comprehensive fix commit.
+Both problems were introduced during refactoring/feature addition work and were fixed together in a single comprehensive fix commit. The empty stream handling issue was particularly notable as it was a regression - functionality that had been working was accidentally removed during a major refactoring (AI SDK migration) and then had to be re-added.
